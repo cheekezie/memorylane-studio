@@ -1,0 +1,53 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	--background: 255 255 255; /* White */
+	--foreground: 49 61 74; /* Charcoal */
+	--primary: 95 102 82;
+	--secondary: 233 140 24;
+}
+
+.dark {
+	--background: 49 61 74; /* Charcoal */
+	--foreground: 237 237 237; /* Light gray */
+	--primary: 95 102 82;
+	--secondary: 233 140 24;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	background: rgb(var(--background));
+	color: rgb(var(--foreground));
+	font-family: "Sora", sans-serif;
+	margin: 0;
+	max-width: 100vw;
+	line-height: 1.5;
+	font-weight: 400;
+	margin: 0 auto;
+	min-width: 320px;
+	min-height: 100vh;
+	overflow-x: hidden;
+	letter-spacing: 0.004em;
+	scrollbar-width: thin;
+	transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+* {
+	box-sizing: border-box;
+	padding: 0;
+	margin: 0;
+}
+
+/* @layer base {
+	body {
+		@apply font-sora font-normal text-base text-black bg-whiten relative z-1;
+	}
+} */
