@@ -4,6 +4,7 @@ import Loader from "./components/Loader";
 import RootLayout from "./layout/RootLayout";
 import { privateRoutes, publicRoutes } from "./routes";
 import { AppInitializer } from "./providers/AppInitializer";
+import "@ant-design/v5-patch-for-react-19";
 
 function App() {
 	return (
