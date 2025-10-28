@@ -13,31 +13,37 @@ function lazyLoad<T extends ComponentType<Record<string, never>>>(
 	return lazy(factory);
 }
 
-// Public Routes
 export const publicRoutes: RouteConfig[] = [
 	{
-		path: "/login",
-		element: lazyLoad(() => import("../pages/login/Login")),
+		path: "/",
+		element: lazyLoad(() => import("../pages/home/Home")),
 	},
 	{
 		path: "/reset-password",
 		element: lazyLoad(() => import("../pages/resetPassword/ResetPassword")),
 	},
 	{
-		path: "/signup",
-		element: lazyLoad(() => import("../pages/signUp/SignUp")),
+		path: "/art-collections",
+		element: lazyLoad(() => import("../pages/art/ArtCollections")),
+	},
+	{
+		path: "/gallery-wall",
+		element: lazyLoad(() => import("../pages/gallery/GalleryWall")),
+	},
+	{
+		path: "/cart",
+		element: lazyLoad(() => import("../pages/cart/Cart")),
+	},
+	{
+		path: "/checkout",
+		element: lazyLoad(() => import("../pages/cart/Checkout")),
 	},
 ];
 
 // Private Routes
 export const privateRoutes: RouteConfig[] = [
 	{
-		path: "/",
-		element: lazyLoad(() => import("../pages/home/Home")),
-		preload: true,
-	},
-	{
-		path: "/frame-picture",
-		element: lazyLoad(() => import("../pages/frames/FramePhoto")),
+		path: "/my-orders",
+		element: lazyLoad(() => import("../pages/orders/MyOrders")),
 	},
 ];
