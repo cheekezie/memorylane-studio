@@ -1,6 +1,8 @@
 import { Menu, Bell, ShoppingCart, User } from "lucide-react";
 import { Badge, Button as AntButton } from "antd";
 import Button from "../components/elements/Button";
+import { useCartStore } from "../store";
+import { useLoading } from "../contexts/loading";
 
 interface HeaderProps {
 	onMenuClick: () => void;
@@ -16,6 +18,13 @@ const MENU_TITLES: Record<string, string> = {
 
 const Header = ({ onMenuClick, activeMenuItem }: HeaderProps) => {
 	const title = MENU_TITLES[activeMenuItem] || "Frame Photo";
+	const cartCount = useCartStore((state) => state.getItemCount());
+	const { startLoading } = useLoading();
+
+	const handleCartNavigate = () => {
+		startLoading();
+		window.location.href = "/cart";
+	};
 
 	return (
 		<header className="flex items-center justify-between bg-gray-50 px-3 sm:px-6 py-3 sm:py-4 rounded-xl shadow-card transition-all duration-300">
@@ -43,7 +52,13 @@ const Header = ({ onMenuClick, activeMenuItem }: HeaderProps) => {
 					/>
 				</Badge>
 
-				<Badge count={0} showZero color="#D34053" offset={[-6, 4]}>
+				<Badge
+					onClick={handleCartNavigate}
+					count={cartCount}
+					showZero
+					color="#D34053"
+					offset={[-6, 4]}
+				>
 					<AntButton
 						type="text"
 						icon={
