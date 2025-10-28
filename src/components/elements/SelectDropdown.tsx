@@ -1,95 +1,116 @@
-import React from "react";
-import { ChevronDown } from "lucide-react";
+"use client";
 
-interface SelectProps {
+import { Fragment } from "react";
+import {
+	Listbox,
+	ListboxButton,
+	ListboxOption,
+	ListboxOptions,
+	Transition,
+} from "@headlessui/react";
+import { ChevronsUpDown, Check } from "lucide-react";
+
+interface Option {
+	value: string;
+	label: string;
+}
+
+interface SelectDropdownProps {
 	label?: string;
-	placeholder?: string;
-	name?: string;
-	id?: string;
-	className?: string;
-	labelClassName?: string;
 	value?: string;
-	onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-	options: { value: string; label: string }[];
+	onChange?: (value: string) => void;
+	options: Option[];
+	placeholder?: string;
 	disabled?: boolean;
 }
 
-const SelectDropdown = ({
+export default function SelectDropdown({
 	label,
-	placeholder = "Select an option",
-	name,
-	id = "myselect",
-	className = "",
-	labelClassName = "",
 	value,
 	onChange,
 	options,
+	placeholder = "Select an option",
 	disabled = false,
-}: SelectProps) => {
+}: SelectDropdownProps) {
 	return (
-		<div className="mb-4">
+		<div className="w-full mb-5">
 			{label && (
-				<label
-					htmlFor={id}
-					className={`block mb-2 text-sm font-medium text-graydark dark:text-foreground transition-colors ${labelClassName}`}
-				>
+				<label className="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
 					{label}
 				</label>
 			)}
-			<div className="relative">
-				<select
-					name={name}
-					id={id}
-					value={value}
-					onChange={onChange}
-					disabled={disabled}
-					className={`
-						block w-full appearance-none
-						px-4 py-3 pr-10
-						text-sm font-poppins
-						bg-white dark:bg-meta-4
-						border-2 rounded-xl
-						border-bodydark1 dark:border-meta-4
-						transition-all duration-300
-						cursor-pointer
-						hover:border-bodydark2 dark:hover:border-bodydark
-						focus:border-primary focus:ring-2 focus:ring-primary/20
-						${
-							disabled
-								? "bg-bodydark1/30 dark:bg-meta-4/30 cursor-not-allowed opacity-60"
-								: ""
-						}
-						text-graydark dark:text-foreground
-						focus:outline-none
-						placeholder:text-bodydark2 dark:placeholder:text-bodydark
-						${className}
-					`}
-				>
-					<option value="" disabled>
-						{placeholder}
-					</option>
-					{options.map((option) => (
-						<option key={option.value} value={option.value}>
-							{option.label}
-						</option>
-					))}
-				</select>
 
-				{/* Custom Dropdown Arrow */}
-				<div
-					className={`
-						absolute right-3 top-1/2 -translate-y-1/2
-						pointer-events-none
-						transition-colors duration-300
-						text-bodydark2 dark:text-bodydark
-						${disabled ? "opacity-40" : ""}
-					`}
-				>
-					<ChevronDown className="w-5 h-5" />
+			<Listbox value={value} onChange={onChange} disabled={disabled}>
+				<div className="relative">
+					<ListboxButton
+						className={`
+              relative w-full cursor-pointer rounded-[12px] bg-white dark:bg-[#1E1E1E]
+              border border-gray-300 dark:border-gray-700
+              py-[15px] pl-4 pr-10 text-left text-sm font-medium text-gray-800 dark:text-gray-100
+              shadow-sm transition-all duration-300
+              hover:border-gray-400 dark:hover:border-gray-500
+              focus:outline-none focus:ring-1 focus:ring-primary/90
+              ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+            `}
+					>
+						<span className="block truncate">
+							{value
+								? options.find((opt) => opt.value === value)?.label
+								: placeholder}
+						</span>
+						<span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+							<ChevronsUpDown className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+						</span>
+					</ListboxButton>
+
+					<Transition
+						as={Fragment}
+						leave="transition ease-in duration-100"
+						leaveFrom="opacity-100 scale-100"
+						leaveTo="opacity-0 scale-95"
+					>
+						<ListboxOptions
+							className="
+                absolute z-10 mt-2 w-full rounded-xl bg-white dark:bg-[#1E1E1E]
+                border border-gray-200 dark:border-gray-700 shadow-lg
+                max-h-60 overflow-auto focus:outline-none
+              "
+						>
+							{options.map((option) => (
+								<ListboxOption
+									key={option.value}
+									value={option.value}
+									className={({ active }) =>
+										`relative cursor-pointer select-none py-3 pl-4 pr-10 text-sm transition-all
+                    ${
+											active
+												? "bg-primary/10 text-primary dark:bg-primary/20"
+												: "text-gray-800 dark:text-gray-100"
+										}`
+									}
+								>
+									{({ selected }) => (
+										<>
+											<span
+												className={`block truncate ${
+													selected ? "font-semibold" : "font-normal"
+												}`}
+											>
+												{option.label}
+											</span>
+											{selected && (
+												<span className="absolute inset-y-0 right-3 flex items-center text-primary">
+													<Check className="h-4 w-4" />
+												</span>
+											)}
+										</>
+									)}
+								</ListboxOption>
+							))}
+						</ListboxOptions>
+					</Transition>
 				</div>
-			</div>
+			</Listbox>
 		</div>
 	);
-};
-
-export default SelectDropdown;
+}
