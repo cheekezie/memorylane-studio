@@ -1,4 +1,5 @@
-import { Image, Grid, ShoppingBag, FolderOpen } from "lucide-react";
+import { Image, Grid, FolderOpen } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { LogoImage } from "../assets";
 
 interface SidebarProps {
@@ -12,34 +13,54 @@ interface NavItem {
 	id: string;
 	label: string;
 	icon: React.ReactNode;
+	link: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
 	{
 		id: "frame-photo",
 		label: "Frame Photo",
+		link: "/",
 		icon: <Image className="w-5 h-5" />,
 	},
 	{
 		id: "gallery-wall",
 		label: "Gallery Wall",
+		link: "/gallery-wall",
 		icon: <Grid className="w-5 h-5" />,
 	},
-	{
-		id: "my-orders",
-		label: "My Orders",
-		icon: <ShoppingBag className="w-5 h-5" />,
-	},
+	// {
+	// 	id: "my-orders",
+	// 	label: "My Orders",
+	// 	link: "/orders",
+	// 	icon: <ShoppingBag className="w-5 h-5" />,
+	// },
 	{
 		id: "art-collections",
 		label: "Art Collections",
+		link: "/art-collections",
 		icon: <FolderOpen className="w-5 h-5" />,
 	},
 ];
 
-const Sidebar = ({ isOpen = true, activeItem, onItemSelect }: SidebarProps) => {
+const Sidebar = ({
+	isOpen = true,
+	activeItem,
+	onItemSelect,
+	onClose,
+}: SidebarProps) => {
+	const location = useLocation();
+
 	const handleItemClick = (id: string) => {
 		onItemSelect(id);
+
+		if (onClose) {
+			onClose();
+		}
+	};
+
+	const isActive = (item: NavItem) => {
+		return location.pathname === item.link || activeItem === item.id;
 	};
 
 	return (
@@ -51,20 +72,22 @@ const Sidebar = ({ isOpen = true, activeItem, onItemSelect }: SidebarProps) => {
 				`}
 			>
 				<div className="p-6 border-b border-white/10">
-					<img src={LogoImage} alt="Logo" className="w-full object-contain" />
+					<Link to="/" onClick={() => handleItemClick("frame-photo")}>
+						<img src={LogoImage} alt="Logo" className="w-full object-contain" />
+					</Link>
 				</div>
 
-				{/* Nav Links */}
 				<nav className="flex-1 px-4 py-3 space-y-1">
 					{NAV_ITEMS.map((item) => (
-						<button
+						<Link
 							key={item.id}
+							to={item.link}
 							onClick={() => handleItemClick(item.id)}
 							className={`
 								group relative flex items-center w-full gap-3 px-4 py-3 rounded-xl text-sm font-medium
 								transition-all duration-300 ease-in-out
 								${
-									activeItem === item.id
+									isActive(item)
 										? "bg-white/25 text-white shadow-md"
 										: "text-white/70 hover:text-white hover:bg-white/10"
 								}
@@ -72,17 +95,17 @@ const Sidebar = ({ isOpen = true, activeItem, onItemSelect }: SidebarProps) => {
 						>
 							<span
 								className={`transition-transform duration-300 ${
-									activeItem === item.id ? "scale-110" : "group-hover:scale-105"
+									isActive(item) ? "scale-110" : "group-hover:scale-105"
 								}`}
 							>
 								{item.icon}
 							</span>
 							<span>{item.label}</span>
 
-							{activeItem === item.id && (
+							{isActive(item) && (
 								<div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
 							)}
-						</button>
+						</Link>
 					))}
 				</nav>
 
