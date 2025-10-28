@@ -1,4 +1,4 @@
-import type { HTMLInputTypeAttribute, ReactNode, ChangeEvent } from "react";
+import type { HTMLInputTypeAttribute, ChangeEvent } from "react";
 
 interface prop {
 	label?: string;
@@ -11,7 +11,7 @@ interface prop {
 	id?: string;
 	className?: string;
 	type?: HTMLInputTypeAttribute;
-	icon?: ReactNode;
+	icon?: React.ReactNode;
 	mode?:
 		| "none"
 		| "text"
