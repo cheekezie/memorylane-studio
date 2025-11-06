@@ -10,6 +10,7 @@ interface prop {
 	disabled?: boolean;
 	id?: string;
 	className?: string;
+	labelClassName?: string;
 	type?: HTMLInputTypeAttribute;
 	icon?: React.ReactNode;
 	mode?:
@@ -36,19 +37,23 @@ const TextInput = ({
 	mode,
 	placeholder,
 	className,
+	labelClassName = "",
 	id = "myinput",
 	value,
 	icon,
+	disabled = false,
 	onChange,
 }: prop) => {
 	return (
 		<div className="mb-4">
 			{label && (
-				<label htmlFor={id} className="block mb-2 text-sm text-gray-800">
+				<label
+					htmlFor={id}
+					className={`block mb-2 text-sm font-medium text-graydark dark:text-foreground transition-colors ${labelClassName}`}
+				>
 					{label}
 				</label>
 			)}
-
 			<div className="relative">
 				<input
 					name={name}
@@ -61,12 +66,29 @@ const TextInput = ({
 					placeholder={placeholder}
 					value={value}
 					onChange={onChange}
-					className={`block w-full border border-gray-600 rounded-[12px] py-3 px-4 pr-10 
-						focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none ${className}`}
+					disabled={disabled}
+					className={`
+						block w-full 
+						border rounded-[12px]
+						px-4 ${icon ? "py-4 pr-12" : "py-4"}
+						text-sm font-poppins
+						bg-white dark:bg-meta-4
+						border-bodydark1 dark:border-meta-4
+						text-graydark dark:text-foreground
+						placeholder:text-bodydark2 dark:placeholder:text-bodydark
+						transition-all duration-300
+						hover:border-bodydark2 dark:hover:border-bodydark
+						focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none
+						${
+							disabled
+								? "bg-bodydark1/30 dark:bg-meta-4/30 cursor-not-allowed opacity-60"
+								: ""
+						}
+						${className}
+					`}
 				/>
-
 				{icon && (
-					<div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+					<div className="absolute right-3 top-1/2 -translate-y-1/2 text-bodydark2 dark:text-bodydark transition-colors">
 						{icon}
 					</div>
 				)}
