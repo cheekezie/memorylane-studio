@@ -13,16 +13,15 @@ const RootLayout = ({ children }: RootLayoutProps) => {
 
 	return (
 		<div className="flex h-screen bg-gray-50 overflow-hidden">
-			{/* Desktop */}
+			{/* Desktop Sidebar */}
 			<aside className="hidden lg:block lg:w-64 m-4">
 				<Sidebar
-					isOpen
+					isOpen={true}
 					activeItem={activeMenuItem}
 					onItemSelect={setActiveMenuItem}
 				/>
 			</aside>
 
-			{/* Mobile overlay */}
 			{sidebarOpen && (
 				<div
 					className="fixed inset-0 bg-black/40 z-40 lg:hidden"
@@ -30,7 +29,6 @@ const RootLayout = ({ children }: RootLayoutProps) => {
 				/>
 			)}
 
-			{/* Mobile Sidebar */}
 			<aside
 				className={`fixed top-0 left-0 h-full w-64 z-50 transform transition-transform duration-300 lg:hidden ${
 					sidebarOpen ? "translate-x-0" : "-translate-x-full"
