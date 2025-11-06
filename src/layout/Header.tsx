@@ -3,6 +3,9 @@ import { Badge, Button as AntButton } from "antd";
 import Button from "../components/elements/Button";
 import { useCartStore } from "../store";
 import { useLoading } from "../contexts/loading";
+import { Modal } from "../components/ui/Modal";
+import { useState } from "react";
+import AuthUserLayout from "../components/authComponents/AuthUserLayout";
 
 interface HeaderProps {
 	onMenuClick: () => void;
@@ -17,6 +20,7 @@ const MENU_TITLES: Record<string, string> = {
 };
 
 const Header = ({ onMenuClick, activeMenuItem }: HeaderProps) => {
+	const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 	const title = MENU_TITLES[activeMenuItem] || "Frame Photo";
 	const cartCount = useCartStore((state) => state.getItemCount());
 	const { startLoading } = useLoading();
@@ -70,8 +74,7 @@ const Header = ({ onMenuClick, activeMenuItem }: HeaderProps) => {
 				</Badge>
 
 				<Button
-					theme="primary"
-					size="sm"
+					onClick={() => setIsModalOpen(true)}
 					className="!py-2 !px-2 sm:!px-4 bg-[whitesmoke] ml-4 border border-bodydark text-black"
 				>
 					<User className="w-4 h-4 flex-shrink-0" />
@@ -80,6 +83,13 @@ const Header = ({ onMenuClick, activeMenuItem }: HeaderProps) => {
 					</span>
 				</Button>
 			</div>
+			<Modal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				size="sm"
+			>
+				<AuthUserLayout />
+			</Modal>
 		</header>
 	);
 };
