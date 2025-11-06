@@ -9,6 +9,8 @@ import Sitting3 from "./sitting-3.jpg";
 import ArrowImage from "./arrow.png";
 import UploadImage from "./upload-image.png";
 import ArtImage from "./art-image.png";
+import Gallery1 from "./gallery1.png";
+import Gallery2 from "./gallery2.png";
 
 export {
 	LogoIcon,
@@ -22,4 +24,6 @@ export {
 	ArrowImage,
 	UploadImage,
 	ArtImage,
+	Gallery1,
+	Gallery2,
 };

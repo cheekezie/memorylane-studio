@@ -46,8 +46,17 @@ body {
 	margin: 0;
 }
 
-/* @layer base {
-	body {
-		@apply font-sora font-normal text-base text-black bg-whiten relative z-1;
-	}
-} */
+.otp-input input {
+	width: 48px !important;
+	height: 48px !important;
+	font-size: 18px !important;
+	font-weight: 600 !important;
+	border: 2px solid #dee4ee !important;
+	border-radius: 8px !important;
+	text-align: center !important;
+}
+
+.otp-input input:focus {
+	border-color: rgb(var(--primary)) !important;
+	box-shadow: none !important;
+}
