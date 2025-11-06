@@ -93,7 +93,7 @@ const CheckoutPage: React.FC = () => {
 		<>
 			<div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
 				<div className="max-w-6xl mx-auto">
-					<Breadcrumb currentStep="checkout" />
+					<Breadcrumb currentStepId="checkout" />
 
 					<h1 className="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
 
