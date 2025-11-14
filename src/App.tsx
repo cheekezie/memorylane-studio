@@ -8,7 +8,7 @@ import "@ant-design/v5-patch-for-react-19";
 
 function renderElement(el: any) {
 	if (isValidElement(el)) return el;
-	return createElement(el);
+	return createElement(el, null);
 }
 
 function App() {
@@ -25,9 +25,10 @@ function App() {
 										path={route.path}
 										element={renderElement(route.element)}
 									>
-										{route.children.map((child) => (
+										{route.children.map((child, idx) => (
 											<Route
-												key={child.path}
+												key={child.path || `index-${idx}`}
+												index={child.index}
 												path={child.path}
 												element={renderElement(child.element)}
 											/>
@@ -35,7 +36,6 @@ function App() {
 									</Route>
 								);
 							}
-
 							return (
 								<Route
 									key={route.path}
@@ -44,7 +44,6 @@ function App() {
 								/>
 							);
 						})}
-
 						{privateRoutes.map((route) => (
 							<Route
 								key={route.path}
@@ -52,7 +51,6 @@ function App() {
 								element={renderElement(route.element)}
 							/>
 						))}
-
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Routes>
 				</Suspense>
