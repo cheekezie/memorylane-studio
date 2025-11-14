@@ -4,8 +4,6 @@ import { LogoImage } from "../assets";
 
 interface SidebarProps {
 	isOpen?: boolean;
-	activeItem: string;
-	onItemSelect: (id: string) => void;
 	onClose?: () => void;
 }
 
@@ -29,12 +27,6 @@ const NAV_ITEMS: NavItem[] = [
 		link: "/gallery-wall",
 		icon: <Grid className="w-5 h-5" />,
 	},
-	// {
-	// 	id: "my-orders",
-	// 	label: "My Orders",
-	// 	link: "/orders",
-	// 	icon: <ShoppingBag className="w-5 h-5" />,
-	// },
 	{
 		id: "art-collections",
 		label: "Art Collections",
@@ -43,36 +35,36 @@ const NAV_ITEMS: NavItem[] = [
 	},
 ];
 
-const Sidebar = ({
-	isOpen = true,
-	activeItem,
-	onItemSelect,
-	onClose,
-}: SidebarProps) => {
+const Sidebar = ({ isOpen = true, onClose }: SidebarProps) => {
 	const location = useLocation();
 
-	const handleItemClick = (id: string) => {
-		onItemSelect(id);
-
+	const handleItemClick = () => {
 		if (onClose) {
 			onClose();
 		}
 	};
 
 	const isActive = (item: NavItem) => {
-		return location.pathname === item.link || activeItem === item.id;
+		if (item.link === "/") {
+			return location.pathname === "/";
+		}
+		return location.pathname.startsWith(item.link);
 	};
 
 	return (
 		<div className="relative h-full">
 			<div
 				className={`
-					flex flex-col h-full bg-primary text-white rounded-2xl shadow-card transition-all duration-300
-					${isOpen ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"}
-				`}
+                    flex flex-col h-full bg-primary text-white rounded-2xl shadow-card transition-all duration-300
+                    ${
+											isOpen
+												? "translate-x-0 opacity-100"
+												: "-translate-x-full opacity-0"
+										}
+                `}
 			>
 				<div className="p-6 border-b border-white/10">
-					<Link to="/" onClick={() => handleItemClick("frame-photo")}>
+					<Link to="/" onClick={handleItemClick}>
 						<img src={LogoImage} alt="Logo" className="w-full object-contain" />
 					</Link>
 				</div>
@@ -82,16 +74,16 @@ const Sidebar = ({
 						<Link
 							key={item.id}
 							to={item.link}
-							onClick={() => handleItemClick(item.id)}
+							onClick={handleItemClick}
 							className={`
-								group relative flex items-center w-full gap-3 px-4 py-3 rounded-xl text-sm font-medium
-								transition-all duration-300 ease-in-out
-								${
-									isActive(item)
-										? "bg-white/25 text-white shadow-md"
-										: "text-white/70 hover:text-white hover:bg-white/10"
-								}
-							`}
+                                group relative flex items-center w-full gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                                transition-all duration-300 ease-in-out
+                                ${
+																	isActive(item)
+																		? "bg-white/25 text-white shadow-md"
+																		: "text-white/70 hover:text-white hover:bg-white/10"
+																}
+                            `}
 						>
 							<span
 								className={`transition-transform duration-300 ${
@@ -101,7 +93,6 @@ const Sidebar = ({
 								{item.icon}
 							</span>
 							<span>{item.label}</span>
-
 							{isActive(item) && (
 								<div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
 							)}
