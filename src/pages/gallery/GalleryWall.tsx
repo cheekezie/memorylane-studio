@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { GALLERY_WALLS } from "../../db/galleryData";
 import type { GalleryWallTemplate } from "../../types/interfaces/gallery.interface";
 
-const GalleryWallSelectPage: React.FC = () => {
+const GalleryWall: React.FC = () => {
 	const navigate = useNavigate();
 
 	const handleSelectWall = (wall: GalleryWallTemplate) => {
@@ -48,4 +48,4 @@ const GalleryWallSelectPage: React.FC = () => {
 		</>
 	);
 };
-export default GalleryWallSelectPage;
+export default GalleryWall;
