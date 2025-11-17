@@ -6,19 +6,29 @@ import type {
 	GalleryWallTemplate,
 } from "../../types/interfaces/gallery.interface";
 import type { ImageFile } from "../../types/interfaces/image.interface";
+import type { FrameCustomization } from "../../types/interfaces/frame.interface";
+import LivePreview from "../../components/livePreview/LivePreview";
+import { useCartStore } from "../../store";
+import { notification } from "antd";
 
 interface FrameUploadSlot extends GalleryFrame {
-	image?: ImageFile;
+	image?: {
+		id: string;
+		file: File;
+		url?: string;
+	};
 }
 
 const GalleryWallUploadPage: React.FC = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const selectedWall = location.state?.selectedWall as GalleryWallTemplate;
+	const { addItem } = useCartStore();
 
 	const [frameSlots, setFrameSlots] = useState<FrameUploadSlot[]>(
 		selectedWall?.frames || [],
 	);
+	const [showPreview, setShowPreview] = useState(false);
 
 	if (!selectedWall) {
 		navigate("/gallery-wall");
@@ -26,15 +36,14 @@ const GalleryWallUploadPage: React.FC = () => {
 	}
 
 	const handleImageUpload = (frameId: string, file: File) => {
-		const imageFile: ImageFile = {
-			id: `img-${Date.now()}-${Math.random()}`,
-			url: URL.createObjectURL(file),
-			file,
-		};
+		const id = `img-${Date.now()}-${Math.random()}`;
+		const previewUrl = URL.createObjectURL(file);
 
 		setFrameSlots((prev) =>
 			prev.map((slot) =>
-				slot.id === frameId ? { ...slot, image: imageFile } : slot,
+				slot.id === frameId
+					? { ...slot, image: { id, file, url: previewUrl } }
+					: slot,
 			),
 		);
 	};
@@ -42,18 +51,70 @@ const GalleryWallUploadPage: React.FC = () => {
 	const handleRemoveImage = (frameId: string) => {
 		setFrameSlots((prev) =>
 			prev.map((slot) =>
-				slot.id === frameId ? { ...slot, image: undefined } : slot,
+				slot.id === frameId
+					? {
+							...slot,
+							image: undefined,
+					  }
+					: slot,
 			),
 		);
 	};
 
-	const allImagesUploaded = frameSlots.every((slot) => slot.image);
+	const allImagesUploaded = frameSlots.every((slot) => slot.image?.file);
 
 	const handleContinue = () => {
-		const images = frameSlots.map((slot) => slot.image!);
-		console.log(images);
+		setShowPreview(true);
 	};
 
+	const handleSaveCustomization = (
+		image: ImageFile,
+		customization: FrameCustomization,
+	) => {
+		addItem(image, customization);
+
+		const uploadedCount = frameSlots.filter((s) => s.image).length;
+		notification.success({
+			message: `Frame ${uploadedCount} customized and added!`,
+		});
+
+		if (uploadedCount === frameSlots.length) {
+			notification.success({
+				message: `Gallery wall with ${uploadedCount} frames added to cart!`,
+			});
+			navigate("/gallery-wall");
+		}
+	};
+	if (showPreview) {
+		const imagesForPreview: ImageFile[] = frameSlots
+			.filter(
+				(
+					slot,
+				): slot is FrameUploadSlot & {
+					image: NonNullable<FrameUploadSlot["image"]>;
+				} => !!slot.image?.file,
+			)
+			.map((slot) => {
+				const { id, file } = slot.image!;
+
+				const url = URL.createObjectURL(file);
+
+				return {
+					id,
+					file,
+					url,
+				};
+			});
+
+		return (
+			<LivePreview
+				images={imagesForPreview}
+				onClose={() => setShowPreview(false)}
+				onSave={handleSaveCustomization}
+				mode="gallery"
+			/>
+		);
+	}
 	return (
 		<>
 			<div className="mb-8">
@@ -75,7 +136,7 @@ const GalleryWallUploadPage: React.FC = () => {
 								<div
 									className={`aspect-[3/4] rounded-lg border-2 overflow-hidden ${
 										slot.image
-											? "border-green"
+											? "border-green-500"
 											: "border-dashed border-gray-300"
 									} bg-gray-50 flex flex-col items-center justify-center relative group`}
 								>
@@ -121,6 +182,12 @@ const GalleryWallUploadPage: React.FC = () => {
 			</div>
 
 			<div className="flex gap-4 justify-end">
+				<button
+					onClick={() => navigate("/gallery-wall")}
+					className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+				>
+					Back
+				</button>
 				<button
 					onClick={handleContinue}
 					disabled={!allImagesUploaded}
