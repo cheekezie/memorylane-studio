@@ -12,9 +12,6 @@ const GalleryWall: React.FC = () => {
 	return (
 		<>
 			<div className="mb-8">
-				<h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-					Gallery Wall
-				</h1>
 				<p className="text-gray-600">
 					Choose a gallery wall layout to get started
 				</p>
