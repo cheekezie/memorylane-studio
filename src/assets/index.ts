@@ -11,6 +11,10 @@ import UploadImage from "./upload-image.png";
 import ArtImage from "./art-image.png";
 import Gallery1 from "./gallery1.png";
 import Gallery2 from "./gallery2.png";
+import ArtImage1 from "./art1.png";
+import ArtImage2 from "./art2.png";
+import ArtImage3 from "./art3.png";
+import ArtImage4 from "./art4.png";
 
 export {
 	LogoIcon,
@@ -26,4 +30,8 @@ export {
 	ArtImage,
 	Gallery1,
 	Gallery2,
+	ArtImage1,
+	ArtImage2,
+	ArtImage3,
+	ArtImage4,
 };

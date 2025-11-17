@@ -13,3 +13,17 @@ export interface GalleryWallTemplate {
 	frames: GalleryFrame[];
 	totalFrames: number;
 }
+
+export interface GalleryImage {
+	id: string;
+	src: string | null;
+	layout: "square" | "portrait" | "landscape";
+	top: number;
+	left: number;
+	width: number;
+	height: number;
+	frameType: string;
+	frameSize: number;
+	borderStyle: string | null;
+	effectStyle: string | null;
+}
