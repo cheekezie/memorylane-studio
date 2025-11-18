@@ -214,7 +214,7 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 			<div
 				className={`relative rounded-xl overflow-hidden transition-all duration-500 ${
 					isSelected && editMode === "single"
-						? "shadow-2xl ring-2"
+						? "shadow-2xl"
 						: "hover:shadow-xl hover:scale-[1.02]"
 				}`}
 				style={{
