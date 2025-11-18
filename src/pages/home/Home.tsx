@@ -5,7 +5,6 @@ import type { FrameCustomization } from "../../types/interfaces/frame.interface"
 import type { ImageFile } from "../../types/interfaces/image.interface";
 import { useCartStore } from "../../store";
 import { ImageUpload } from "../../components/ImageUpload";
-import { notification } from "antd";
 import { ArtImage, UploadImage } from "../../assets";
 
 const Home: React.FC = () => {
@@ -34,17 +33,6 @@ const Home: React.FC = () => {
 		customization: FrameCustomization,
 	) => {
 		addItem(image, customization);
-
-		const isLast = uploadedImages[uploadedImages.length - 1].id === image.id;
-		if (isLast) {
-			notification.success({
-				message: `${uploadedImages.length} item(s) added to cart!`,
-			});
-
-			setShowPreview(false);
-			setUploadedImages([]);
-			setUploadType(null);
-		}
 	};
 
 	if (showPreview) {
@@ -56,6 +44,7 @@ const Home: React.FC = () => {
 					setUploadedImages([]);
 				}}
 				onSave={handleSaveCustomization}
+				mode={uploadType === "artwork" ? "art" : "frame"}
 			/>
 		);
 	}
