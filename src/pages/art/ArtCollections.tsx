@@ -1,4 +1,5 @@
-import { useState } from "react";
+// ArtCollections.tsx
+import { useState, useEffect } from "react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 import Button from "../../components/elements/Button";
@@ -8,214 +9,196 @@ import type { FrameCustomization } from "../../types/interfaces/frame.interface"
 import { useCartStore } from "../../store";
 import { notification } from "antd";
 import { CATEGORIES, NATURE_ART } from "../../db/ArtData";
+import { remoteImageToFile } from "../../utils/helpers/ConvertImage";
 
 const ArtCollections: React.FC = () => {
-	const [activeCategory, setActiveCategory] = useState("nature");
-	const [selectedImages, setSelectedImages] = useState<string[]>([]);
+	const [selectedIds, setSelectedIds] = useState<string[]>([]);
+	const [previewImages, setPreviewImages] = useState<ImageFile[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
 	const [showPreview, setShowPreview] = useState(false);
-	const categoryScrollRef = useRef<HTMLDivElement>(null);
+
+	const scrollRef = useRef<HTMLDivElement>(null);
 	const { addItem } = useCartStore();
 
-	const MAX_SELECTION = 6;
+	const MAX = 6;
+	const artworks = NATURE_ART;
 
-	const getArtImages = () => {
-		// to expand this later with different images per category
-		return NATURE_ART;
-	};
+	const toggleSelection = (id: string) => {
+		setSelectedIds((prev) =>
+			prev.includes(id)
+				? prev.filter((x) => x !== id)
+				: prev.length < MAX
+				? [...prev, id]
+				: prev,
+		);
 
-	const artImages = getArtImages();
-
-	const handleImageSelect = (imageId: string) => {
-		if (selectedImages.includes(imageId)) {
-			setSelectedImages((prev) => prev.filter((id) => id !== imageId));
-		} else {
-			if (selectedImages.length < MAX_SELECTION) {
-				setSelectedImages((prev) => [...prev, imageId]);
-			} else {
-				notification.warning({
-					message: `Maximum ${MAX_SELECTION} images allowed`,
-					description: "Please deselect an image before selecting another.",
-				});
-			}
-		}
-	};
-
-	const handleContinue = () => {
-		if (selectedImages.length === 0) {
-			notification.info({
-				message: "No images selected",
-				description: "Please select at least one image to continue.",
+		if (selectedIds.length === MAX && !selectedIds.includes(id)) {
+			notification.warning({
+				message: "Selection limit reached",
+				description: `You can select up to ${MAX} artworks.`,
 			});
-			return;
 		}
-		setShowPreview(true);
 	};
 
-	const handleSaveCustomization = (
-		image: ImageFile,
-		customization: FrameCustomization,
-	) => {
+	const handleContinue = async () => {
+		if (selectedIds.length === 0)
+			return notification.info({ message: "Select at least one artwork" });
+
+		setIsLoading(true);
+		try {
+			const images = await Promise.all(
+				selectedIds.map((id) => {
+					const art = artworks.find((a) => a.id === id);
+					if (!art) throw new Error("Art not found");
+					return remoteImageToFile(art);
+				}),
+			);
+
+			setPreviewImages(images);
+			setShowPreview(true);
+		} catch {
+			notification.error({
+				message: "Failed to load images. Please try again.",
+			});
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleSave = (image: ImageFile, customization: FrameCustomization) => {
 		addItem(image, customization);
-
-		const selectedImageFiles = selectedImages.map((id) => {
-			const artImage = artImages.find((img) => img.id === id);
-			return artImage;
-		});
-
-		const isLast =
-			selectedImageFiles[selectedImageFiles.length - 1]?.id === image.id;
-
-		if (isLast) {
-			notification.success({
-				message: `${selectedImages.length} art piece(s) added to cart!`,
-			});
-
-			setShowPreview(false);
-			setSelectedImages([]);
-		}
 	};
 
-	const scrollCategories = (direction: "left" | "right") => {
-		if (categoryScrollRef.current) {
-			const scrollAmount = 200;
-			categoryScrollRef.current.scrollBy({
-				left: direction === "left" ? -scrollAmount : scrollAmount,
-				behavior: "smooth",
-			});
+	useEffect(() => {
+		if (!showPreview && previewImages.length > 0) {
+			previewImages.forEach((img) => URL.revokeObjectURL(img.url));
+			setPreviewImages([]);
 		}
+	}, [showPreview]);
+
+	const scroll = (direction: "left" | "right") => {
+		scrollRef.current?.scrollBy({
+			left: direction === "left" ? -240 : 240,
+			behavior: "smooth",
+		});
 	};
 
 	if (showPreview) {
-		const selectedImageFiles: ImageFile[] = selectedImages.map((id) => {
-			const artImage = artImages.find((img) => img.id === id);
-			return {
-				id: artImage!.id,
-				url: artImage!.url,
-			};
-		});
-
 		return (
 			<LivePreview
-				images={selectedImageFiles}
+				images={previewImages}
 				onClose={() => setShowPreview(false)}
-				onSave={handleSaveCustomization}
+				onSave={handleSave}
 				mode="art"
 			/>
 		);
 	}
 
+	// Main UI
 	return (
-		<div className="space-y-6">
-			={" "}
-			<div>
-				<p className="text-gray-600">
-					Select up to {MAX_SELECTION} artworks to frame (
-					{selectedImages.length}/{MAX_SELECTION} selected)
+		<div className="space-y-8 pb-8">
+			<div className="text-center sm:text-left">
+				<p className="text-lg text-gray-600">
+					Select up to {MAX} artworks to frame
+					<span className="ml-2 font-semibold text-primary">
+						({selectedIds.length}/{MAX})
+					</span>
 				</p>
 			</div>
-			{/* Categories*/}
+
+			{/* Category */}
 			<div className="relative">
 				<button
-					onClick={() => scrollCategories("left")}
-					className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hidden sm:block"
-					aria-label="Scroll left"
+					onClick={() => scroll("left")}
+					className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white rounded-full shadow-lg hover:shadow-xl hidden sm:block"
 				>
 					<ChevronLeft className="w-5 h-5" />
 				</button>
-
 				<div
-					ref={categoryScrollRef}
+					ref={scrollRef}
 					className="overflow-x-auto scrollbar-hide scroll-smooth"
 				>
-					<div className="flex gap-2 px-8 sm:px-12">
-						{CATEGORIES.map((category) => (
+					<div className="flex gap-3 px-12">
+						{CATEGORIES.map((cat) => (
 							<button
-								key={category.id}
-								onClick={() => setActiveCategory(category.id)}
-								className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-									activeCategory === category.id
-										? "bg-primary text-white shadow-md"
-										: "bg-gray-100 text-gray-700 hover:bg-gray-200"
-								}`}
+								key={cat.id}
+								onClick={() => {}}
+								className="flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-medium transition-all bg-gray-100 hover:bg-gray-200"
 							>
-								{category.label}
+								{cat.label}
 							</button>
 						))}
 					</div>
 				</div>
-
 				<button
-					onClick={() => scrollCategories("right")}
-					className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hidden sm:block"
-					aria-label="Scroll right"
+					onClick={() => scroll("right")}
+					className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white rounded-full shadow-lg hover:shadow-xl hidden sm:block"
 				>
 					<ChevronRight className="w-5 h-5" />
 				</button>
 			</div>
+
 			{/* Art Grid */}
-			<div className="bg-white rounded-lg p-6 shadow-sm">
-				<p className="text-sm text-gray-500 mb-4">
-					You can select more than 1 Art
+			<div className="bg-white rounded-2xl p-6 shadow-sm">
+				<p className="text-sm text-gray-500 mb-6">
+					Click to select (multiple allowed)
 				</p>
 
-				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-					{artImages.map((image) => {
-						const isSelected = selectedImages.includes(image.id);
+				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+					{artworks.map((art) => {
+						const isSelected = selectedIds.includes(art.id);
+						const order = selectedIds.indexOf(art.id) + 1;
 
 						return (
-							<div
-								key={image.id}
-								onClick={() => handleImageSelect(image.id)}
-								className={`relative aspect-[3/4] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${
+							<button
+								key={art.id}
+								onClick={() => toggleSelection(art.id)}
+								className={`relative aspect-[3/4] rounded-xl overflow-hidden transition-all duration-300 ${
 									isSelected
-										? "ring-4 ring-primary shadow-xl scale-105"
-										: "hover:scale-105 hover:shadow-lg"
+										? "ring-4 ring-primary shadow-2xl scale-105"
+										: "hover:scale-105 hover:shadow-xl"
 								}`}
 							>
 								<img
-									src={image.url}
-									alt={image.title}
+									src={art.url}
+									alt={art.title}
 									className="w-full h-full object-cover"
 									loading="lazy"
 								/>
 
 								{isSelected && (
-									<div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-										<div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg">
-											<Check className="w-6 h-6 text-white" strokeWidth={3} />
+									<>
+										<div className="absolute inset-0 bg-primary/30" />
+										<div className="absolute inset-0 flex items-center justify-center">
+											<div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-xl">
+												<Check className="w-8 h-8 text-white" strokeWidth={3} />
+											</div>
 										</div>
-									</div>
+										<div className="absolute top-3 right-3 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
+											{order}
+										</div>
+									</>
 								)}
-
-								{isSelected && (
-									<div className="absolute top-2 right-2 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg">
-										{selectedImages.indexOf(image.id) + 1}
-									</div>
-								)}
-							</div>
+							</button>
 						);
 					})}
 				</div>
 			</div>
-			<div className="flex gap-4 justify-end">
+
+			<div className="flex justify-end">
 				<Button
-					label={`Continue with ${selectedImages.length} image${
-						selectedImages.length !== 1 ? "s" : ""
-					}`}
+					label={
+						isLoading
+							? "Preparing preview..."
+							: `Frame ${selectedIds.length} artwork${
+									selectedIds.length !== 1 ? "s" : ""
+							  }`
+					}
 					onClick={handleContinue}
-					disabled={selectedImages.length === 0}
-					className="!px-6 !py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+					disabled={selectedIds.length === 0 || isLoading}
+					className="px-8 py-2 text-lg font-semibold"
 				/>
 			</div>
-			<style>{`
-				.scrollbar-hide::-webkit-scrollbar {
-					display: none;
-				}
-				.scrollbar-hide {
-					-ms-overflow-style: none;
-					scrollbar-width: none;
-				}
-			`}</style>
 		</div>
 	);
 };
