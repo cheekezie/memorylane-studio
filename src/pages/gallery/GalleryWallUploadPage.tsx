@@ -9,7 +9,6 @@ import type { ImageFile } from "../../types/interfaces/image.interface";
 import type { FrameCustomization } from "../../types/interfaces/frame.interface";
 import LivePreview from "../../components/livePreview/LivePreview";
 import { useCartStore } from "../../store";
-import { notification } from "antd";
 
 interface FrameUploadSlot extends GalleryFrame {
 	image?: {
@@ -51,12 +50,7 @@ const GalleryWallUploadPage: React.FC = () => {
 	const handleRemoveImage = (frameId: string) => {
 		setFrameSlots((prev) =>
 			prev.map((slot) =>
-				slot.id === frameId
-					? {
-							...slot,
-							image: undefined,
-					  }
-					: slot,
+				slot.id === frameId ? { ...slot, image: undefined } : slot,
 			),
 		);
 	};
@@ -72,19 +66,8 @@ const GalleryWallUploadPage: React.FC = () => {
 		customization: FrameCustomization,
 	) => {
 		addItem(image, customization);
-
-		const uploadedCount = frameSlots.filter((s) => s.image).length;
-		notification.success({
-			message: `Frame ${uploadedCount} customized and added!`,
-		});
-
-		if (uploadedCount === frameSlots.length) {
-			notification.success({
-				message: `Gallery wall with ${uploadedCount} frames added to cart!`,
-			});
-			navigate("/gallery-wall");
-		}
 	};
+
 	if (showPreview) {
 		const imagesForPreview: ImageFile[] = frameSlots
 			.filter(
@@ -96,13 +79,10 @@ const GalleryWallUploadPage: React.FC = () => {
 			)
 			.map((slot) => {
 				const { id, file } = slot.image!;
-
-				const url = URL.createObjectURL(file);
-
 				return {
 					id,
 					file,
-					url,
+					url: URL.createObjectURL(file),
 				};
 			});
 
@@ -115,6 +95,7 @@ const GalleryWallUploadPage: React.FC = () => {
 			/>
 		);
 	}
+
 	return (
 		<>
 			<div className="mb-8">
@@ -130,15 +111,15 @@ const GalleryWallUploadPage: React.FC = () => {
 
 			<div className="bg-white rounded-lg p-8 mb-6 shadow-sm">
 				<div className="max-w-4xl mx-auto">
-					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
 						{frameSlots.map((slot) => (
-							<div key={slot.id} className="relative">
+							<div key={slot.id} className="relative group">
 								<div
-									className={`aspect-[3/4] rounded-lg border-2 overflow-hidden ${
+									className={`aspect-[3/4] rounded-xl border-2 overflow-hidden transition-all ${
 										slot.image
-											? "border-green-500"
-											: "border-dashed border-gray-300"
-									} bg-gray-50 flex flex-col items-center justify-center relative group`}
+											? "border-green-500 shadow-lg"
+											: "border-dashed border-gray-300 bg-gray-50"
+									}`}
 								>
 									{slot.image ? (
 										<>
@@ -149,18 +130,18 @@ const GalleryWallUploadPage: React.FC = () => {
 											/>
 											<button
 												onClick={() => handleRemoveImage(slot.id)}
-												className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+												className="absolute inset-0 bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
 											>
-												<span className="text-sm font-medium">Change</span>
+												<span className="text-lg font-medium">
+													Change Photo
+												</span>
 											</button>
 										</>
 									) : (
-										<label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
-											<Upload className="w-8 h-8 text-gray-400 mb-2" />
-											<span className="text-xs text-gray-500 mb-1">
-												{slot.size}
-											</span>
-											<span className="text-xs text-primary font-medium">
+										<label className="cursor-pointer flex flex-col items-center justify-center w-full h-full hover:bg-gray-100 transition-colors">
+											<Upload className="w-10 h-10 text-gray-400 mb-3" />
+											<span className="text-sm text-gray-500">{slot.size}</span>
+											<span className="text-sm font-medium text-primary mt-1">
 												Click to Upload
 											</span>
 											<input
@@ -184,14 +165,14 @@ const GalleryWallUploadPage: React.FC = () => {
 			<div className="flex gap-4 justify-end">
 				<button
 					onClick={() => navigate("/gallery-wall")}
-					className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+					className="px-8 py-3 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition"
 				>
 					Back
 				</button>
 				<button
 					onClick={handleContinue}
 					disabled={!allImagesUploaded}
-					className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					className="px-8 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					Continue to Customize
 				</button>
