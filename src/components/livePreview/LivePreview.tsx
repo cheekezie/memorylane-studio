@@ -4,6 +4,7 @@ import type { ImageFile } from "../../types/interfaces/image.interface";
 import PreviewHeader from "./PreviewHeader";
 import PreviewCarousel from "./PreviewCarousel";
 import CustomizationToolbox from "./CustomizationToolbox";
+import { notification } from "antd";
 
 interface LivePreviewProps {
 	images: ImageFile[];
@@ -159,9 +160,27 @@ const LivePreview: React.FC<LivePreviewProps> = ({
 				editMode === "single" && imageCustomizations[image.id]
 					? imageCustomizations[image.id]
 					: globalCustomization;
+
 			onSave(image, customization);
 		});
+
 		onClose();
+
+		const count = images.length;
+		const isPlural = count > 1;
+		const photoText = isPlural ? "photos" : "photo";
+		const artText = isPlural ? "artworks" : "artwork";
+
+		notification.success({
+			message:
+				mode === "gallery"
+					? `Gallery wall with ${count} framed ${photoText} added to cart!`
+					: mode === "art"
+					? `${count} framed ${artText} added to cart!`
+					: `${count} framed ${photoText} added to cart!`,
+			placement: "top",
+			duration: 4,
+		});
 	};
 
 	return (
