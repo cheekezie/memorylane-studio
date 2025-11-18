@@ -125,7 +125,7 @@ const CartPage: React.FC = () => {
 					/>
 					<Button
 						label="Checkout"
-						onClick={() => navigate("/checkout")}
+						onClick={() => navigate("/cart/checkout")}
 						className="w-full mt-4 bg-graydark py-3 hover:bg-graydark/90 transition-colors"
 					/>
 				</div>
