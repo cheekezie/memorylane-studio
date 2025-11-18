@@ -7,7 +7,6 @@ export const FRAME_TYPES = [
 	{ id: "gold", label: "Gold", color: "#FFD700" },
 	{ id: "charcoal", label: "Charcoal Blue", color: "#36454F" },
 	{ id: "brown", label: "Brown", color: "#654321" },
-	{ id: "thick-gold", label: "Thick Gold", color: "#FFD700" },
 ];
 
 export const FRAME_SIZES = [
