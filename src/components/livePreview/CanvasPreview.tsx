@@ -11,6 +11,7 @@ interface CanvasPreviewProps {
 	isSelected?: boolean;
 	editMode?: "single" | "all";
 	onRemove?: () => void;
+	onReplace?: (url: string, file: File) => void;
 	onMount?: (el: HTMLDivElement | null) => void;
 	onClick?: () => void;
 	index?: number;
@@ -35,6 +36,7 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 	isSelected = false,
 	editMode = "all",
 	onRemove,
+	onReplace,
 	onMount,
 	onClick,
 	index,
@@ -42,24 +44,19 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const wrapperRef = useRef<HTMLDivElement | null>(null);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const borderObj = BORDERS.find((b) => b.id === customization.border);
 	const frameObj = FRAME_TYPES.find((f) => f.id === customization.frameType);
 	const frameColor = frameObj?.color || "#ffffff";
 	const hasFrame = customization.frameType !== "none";
 
-	// Get frame dimensions based on selected size
 	const frameDimensions =
 		FRAME_DIMENSIONS[customization.frameSize] || FRAME_DIMENSIONS["30x20"];
 
-	// Calculate actual display dimensions
 	const displayW = width;
 	const displayH = height ?? Math.round(displayW / frameDimensions.ratio);
-
-	// Frame thickness - realistic depth (12-18px based on size)
 	const frameThickness = hasFrame ? Math.round(displayW * 0.055) : 0;
-
-	// Mat border - only applied when border option is selected
 	const matBorderPx = borderObj?.width || 0;
 
 	const getEffectFilter = (effect: string) => {
@@ -128,16 +125,13 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 		thickness: number,
 		color: string,
 	) => {
-		// Outer frame rectangle
 		ctx.fillStyle = color;
 		ctx.fillRect(x, y, w, h);
 
-		// Create 3D beveled effect - lighter top/left edges
 		const topColor = adjustBrightness(color, 25);
 		const bottomColor = adjustBrightness(color, -35);
 		const sideColor = adjustBrightness(color, -15);
 
-		// Top bevel (highlight)
 		ctx.fillStyle = topColor;
 		ctx.beginPath();
 		ctx.moveTo(x, y);
@@ -147,7 +141,6 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 		ctx.closePath();
 		ctx.fill();
 
-		// Left bevel (highlight)
 		ctx.fillStyle = topColor;
 		ctx.beginPath();
 		ctx.moveTo(x, y);
@@ -157,7 +150,6 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 		ctx.closePath();
 		ctx.fill();
 
-		// Bottom bevel (shadow)
 		ctx.fillStyle = bottomColor;
 		ctx.beginPath();
 		ctx.moveTo(x, y + h);
@@ -167,7 +159,6 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 		ctx.closePath();
 		ctx.fill();
 
-		// Right bevel (shadow)
 		ctx.fillStyle = sideColor;
 		ctx.beginPath();
 		ctx.moveTo(x + w, y);
@@ -180,12 +171,10 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 
 	const adjustBrightness = (color: string, percent: number): string => {
 		if (!color) return "#ffffff";
-
 		const num = parseInt(color.replace("#", ""), 16);
 		const r = Math.min(255, Math.max(0, (num >> 16) + percent));
 		const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + percent));
 		const b = Math.min(255, Math.max(0, (num & 0x0000ff) + percent));
-
 		return "#" + ((r << 16) | (g << 8) | b).toString(16).padStart(6, "0");
 	};
 
@@ -207,29 +196,23 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 		ctx.scale(dpr, dpr);
 		ctx.clearRect(0, 0, displayW, displayH);
 
-		// Draw 3D frame if frame type is selected
 		if (hasFrame && frameThickness > 0) {
 			draw3DFrame(ctx, 0, 0, displayW, displayH, frameThickness, frameColor);
 		}
 
-		// Mat area (inner white border) - only if border is selected
 		const matX = frameThickness;
 		const matY = frameThickness;
 		const matW = Math.max(displayW - frameThickness * 2, 1);
 		const matH = Math.max(displayH - frameThickness * 2, 1);
 
-		// Draw mat border if selected
 		if (matBorderPx > 0) {
 			ctx.fillStyle = "#ffffff";
 			ctx.fillRect(matX, matY, matW, matH);
-
-			// Subtle inner shadow on mat
 			ctx.strokeStyle = "rgba(0, 0, 0, 0.08)";
 			ctx.lineWidth = 1;
 			ctx.strokeRect(matX + 0.5, matY + 0.5, matW - 1, matH - 1);
 		}
 
-		// Image area
 		const imageX = matX + matBorderPx;
 		const imageY = matY + matBorderPx;
 		const imageW = Math.max(matW - matBorderPx * 2, 1);
@@ -248,14 +231,11 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 			return;
 		}
 
-		// Apply effect filter
 		const filter = getEffectFilter(customization.effect);
 		ctx.filter = filter === "none" ? "none" : filter;
 
-		// Use cover fit for tight image wrapping
 		const fit = fitCover(img.width, img.height, imageW, imageH);
 
-		// Clip to image area
 		ctx.save();
 		ctx.beginPath();
 		ctx.rect(imageX, imageY, imageW, imageH);
@@ -276,7 +256,6 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 		ctx.restore();
 		ctx.filter = "none";
 
-		// Inner shadow for depth (on the frame opening)
 		if (hasFrame) {
 			const gradient = ctx.createLinearGradient(
 				matX,
@@ -286,7 +265,6 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 			);
 			gradient.addColorStop(0, "rgba(0, 0, 0, 0.3)");
 			gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-
 			ctx.strokeStyle = gradient;
 			ctx.lineWidth = 3;
 			ctx.strokeRect(matX + 1, matY + 1, matW - 2, matH - 2);
@@ -309,9 +287,7 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 	}, [draw]);
 
 	useEffect(() => {
-		if (onMount) {
-			onMount(wrapperRef.current);
-		}
+		if (onMount) onMount(wrapperRef.current);
 	}, [onMount]);
 
 	return (
@@ -353,6 +329,7 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 				/>
 			</div>
 
+			{/* Delete Button */}
 			{onRemove && (
 				<button
 					onClick={(e) => {
@@ -366,6 +343,48 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 				</button>
 			)}
 
+			{/* Replace Image*/}
+			{isSelected && (
+				<div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+					<div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+					<label className="relative cursor-pointer z-10">
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept="image/*"
+							className="hidden"
+							onChange={(e) => {
+								const file = e.target.files?.[0];
+								if (file && onReplace) {
+									const url = URL.createObjectURL(file);
+									onReplace(url, file);
+								}
+							}}
+						/>
+						<div className="bg-white/95 hover:bg-white rounded-full p-5 shadow-2xl transition-all hover:scale-110">
+							<svg
+								className="w-6 h-6 text-gray-800"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M7 16a4 4 0 01-.88-7.903A5.5 5.5 0 1116 6a5.5 5.5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+								/>
+							</svg>
+						</div>
+						<span className="absolute -bottom-9 left-1/2 -translate-x-1/2 text-white text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity delay-100">
+							Replace Image
+						</span>
+					</label>
+				</div>
+			)}
+
+			{/* Image counter */}
 			{totalImages > 1 && typeof index === "number" && (
 				<div
 					className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg transition-all duration-500 z-30 text-xs font-bold ${

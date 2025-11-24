@@ -12,6 +12,7 @@ interface PreviewCarouselProps {
 	globalCustomization: FrameCustomization;
 	onImageSelect: (index: number) => void;
 	onImageRemove?: (id: string) => void;
+	onImageReplace?: (imageId: string, url: string, file: File) => void;
 	imageRefMap: RefObject<Map<string, HTMLDivElement>>;
 	scrollContainerRef: RefObject<HTMLDivElement | null>;
 	onAddMore?: () => void;
@@ -26,6 +27,7 @@ const PreviewCarousel: React.FC<PreviewCarouselProps> = ({
 	globalCustomization,
 	onImageSelect,
 	onImageRemove,
+	onImageReplace,
 	imageRefMap,
 	scrollContainerRef,
 	onAddMore,
@@ -86,11 +88,11 @@ const PreviewCarousel: React.FC<PreviewCarouselProps> = ({
 						</div>
 					</div>
 				) : (
-					// Normal image grid
 					<div className="flex items-center gap-6 sm:gap-8 lg:gap-10">
 						{images.map((image, idx) => {
 							const isSelected = selectedImageIndex === idx;
 							const imgCustomization = getImageCustomization(image.id);
+
 							return (
 								<div
 									key={image.id}
@@ -111,6 +113,11 @@ const PreviewCarousel: React.FC<PreviewCarouselProps> = ({
 										editMode={editMode}
 										onRemove={
 											onImageRemove ? () => onImageRemove(image.id) : undefined
+										}
+										onReplace={
+											onImageReplace
+												? (url, file) => onImageReplace(image.id, url, file)
+												: undefined
 										}
 										onClick={() => onImageSelect(idx)}
 										index={idx}
