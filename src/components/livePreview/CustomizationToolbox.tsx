@@ -36,6 +36,17 @@ const CustomizationToolbox: React.FC<CustomizationToolboxProps> = ({
 	onCustomizationUpdate,
 	onAddMore,
 }) => {
+	const adjustBrightness = (color: string, percent: number): string => {
+		if (!color) return "#ffffff";
+
+		const num = parseInt(color.replace("#", ""), 16);
+		const r = Math.min(255, Math.max(0, (num >> 16) + percent));
+		const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + percent));
+		const b = Math.min(255, Math.max(0, (num & 0x0000ff) + percent));
+
+		return "#" + ((r << 16) | (g << 8) | b).toString(16).padStart(6, "0");
+	};
+
 	const getEffectFilter = (effect: string) => {
 		switch (effect) {
 			case "warm":
@@ -131,7 +142,8 @@ const CustomizationToolbox: React.FC<CustomizationToolboxProps> = ({
 
 				<div className="relative">
 					<div className="overflow-x-auto scrollbar-hide -mx-3 px-3">
-						<div className="flex gap-2 pb-1">
+						<div className="flex gap-2 sm:gap-3 pb-1">
+							{/* Frame Type Options */}
 							{activeTab === "frameType" &&
 								FRAME_TYPES.map((frame) => (
 									<button
@@ -139,86 +151,149 @@ const CustomizationToolbox: React.FC<CustomizationToolboxProps> = ({
 										onClick={() =>
 											onCustomizationUpdate({ frameType: frame.id })
 										}
-										className={`flex-shrink-0 flex flex-col items-center gap-1.5 p-2 sm:p-2.5 rounded-lg border-2 transition-all min-w-[65px] sm:min-w-[70px] ${
+										className={`flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all min-w-[85px] sm:min-w-[95px] hover:scale-105 ${
 											currentCustomization.frameType === frame.id
-												? "border-primary/80 bg-blue-50 shadow-md"
-												: "border-gray-200 hover:border-gray-300"
+												? "border-primary bg-blue-50 shadow-lg scale-105"
+												: "border-gray-200 hover:border-gray-300 bg-white"
 										}`}
 									>
-										<div
-											className="w-6 h-6 rounded border-[3px] shadow-sm"
-											style={{
-												borderColor: frame.color || "#e5e7eb",
-												backgroundColor:
-													frame.id === "none" ? "#f3f4f6" : "#fff",
-											}}
-										/>
-										<span className="text-[9px] sm:text-[10px] font-medium text-center text-gray-700">
+										<div className="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center">
+											{frame.id === "none" ? (
+												<div className="w-11 h-11 sm:w-12 sm:h-12 bg-gray-100 border border-gray-300 flex items-center justify-center shadow-sm">
+													<div className="w-8 h-8 bg-white" />
+												</div>
+											) : (
+												<div
+													className="relative w-11 h-11 sm:w-12 sm:h-12 shadow-lg"
+													style={{
+														backgroundColor: frame.color || "#e5e7eb",
+														borderTop: `2px solid ${adjustBrightness(
+															frame.color || "#e5e7eb",
+															30,
+														)}`,
+														borderLeft: `2px solid ${adjustBrightness(
+															frame.color || "#e5e7eb",
+															30,
+														)}`,
+														borderBottom: `2px solid ${adjustBrightness(
+															frame.color || "#e5e7eb",
+															-40,
+														)}`,
+														borderRight: `2px solid ${adjustBrightness(
+															frame.color || "#e5e7eb",
+															-20,
+														)}`,
+													}}
+												>
+													<div
+														className="absolute inset-[5px] bg-white"
+														style={{
+															boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2)",
+														}}
+													/>
+												</div>
+											)}
+										</div>
+										<span className="text-[10px] sm:text-xs font-semibold text-center text-gray-700">
 											{frame.label}
 										</span>
 									</button>
 								))}
 
+							{/* Frame Size Options */}
 							{activeTab === "frameSize" &&
-								FRAME_SIZES.map((size) => (
-									<button
-										key={size.id}
-										onClick={() =>
-											onCustomizationUpdate({ frameSize: size.id })
-										}
-										className={`flex-shrink-0 flex flex-col items-center gap-1.5 p-2 sm:p-2.5 rounded-lg border-2 transition-all min-w-[70px] sm:min-w-[75px] ${
-											currentCustomization.frameSize === size.id
-												? "border-primary/80 bg-blue-50 shadow-md"
-												: "border-gray-200 hover:border-gray-300"
-										}`}
-									>
-										<div className="w-10 h-10 sm:w-11 sm:h-11 bg-gray-50 rounded flex items-center justify-center">
-											<div className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-gray-400" />
-										</div>
-										<span className="text-[9px] sm:text-[10px] font-semibold text-gray-700">
-											{size.label}
-										</span>
-									</button>
-								))}
+								FRAME_SIZES.map((size) => {
+									const aspectW = size.ratio > 1 ? 48 : 40;
+									const aspectH = size.ratio > 1 ? 48 / size.ratio : 40;
 
+									return (
+										<button
+											key={size.id}
+											onClick={() =>
+												onCustomizationUpdate({ frameSize: size.id })
+											}
+											className={`flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all min-w-[90px] hover:scale-105 ${
+												currentCustomization.frameSize === size.id
+													? "border-primary bg-blue-50 shadow-lg scale-105"
+													: "border-gray-200 hover:border-gray-300 bg-white"
+											}`}
+										>
+											<div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center">
+												<div
+													className="border-[3px] border-gray-400 rounded-sm shadow-sm"
+													style={{
+														width: `${aspectW}px`,
+														height: `${aspectH}px`,
+													}}
+												/>
+											</div>
+											<div className="text-center">
+												<div className="text-[11px] sm:text-xs font-bold text-gray-800">
+													{size.label}
+												</div>
+												<div className="text-[9px] text-gray-500">
+													{size.description}
+												</div>
+											</div>
+										</button>
+									);
+								})}
+
+							{/* Border Options */}
 							{activeTab === "border" &&
 								BORDERS.map((border) => (
 									<button
 										key={border.id}
 										onClick={() => onCustomizationUpdate({ border: border.id })}
-										className={`flex-shrink-0 flex flex-col items-center gap-1.5 p-2 sm:p-2.5 rounded-lg border-2 transition-all min-w-[70px] ${
+										className={`flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all min-w-[85px] hover:scale-105 ${
 											currentCustomization.border === border.id
-												? "border-primary/80 bg-blue-50 shadow-md"
-												: "border-gray-200 hover:border-gray-300"
+												? "border-primary bg-blue-50 shadow-lg scale-105"
+												: "border-gray-200 hover:border-gray-300 bg-white"
 										}`}
 									>
-										<div className="w-10 h-10 sm:w-11 sm:h-11 bg-gray-50 rounded flex items-center justify-center">
+										<div className="w-14 h-14 bg-gray-700 flex items-center justify-center shadow-md">
 											<div
-												className="w-7 h-7 sm:w-8 sm:h-8 bg-white border-gray-400"
+												className="bg-white flex items-center justify-center"
 												style={{
-													borderWidth: `${Math.max(border.width / 2, 1)}px`,
+													width: border.width > 0 ? "44px" : "56px",
+													height: border.width > 0 ? "44px" : "56px",
 												}}
-											/>
+											>
+												<div
+													className="bg-gray-300"
+													style={{
+														width:
+															border.width > 0
+																? `${44 - border.width * 2}px`
+																: "56px",
+														height:
+															border.width > 0
+																? `${44 - border.width * 2}px`
+																: "56px",
+													}}
+												/>
+											</div>
 										</div>
-										<span className="text-[9px] sm:text-[10px] font-medium text-gray-700">
+										<span className="text-[10px] sm:text-xs font-semibold text-gray-700">
 											{border.label}
 										</span>
 									</button>
 								))}
 
+							{/* Effect Options */}
 							{activeTab === "effects" &&
 								EFFECTS.map((effect) => (
 									<button
 										key={effect.id}
 										onClick={() => onCustomizationUpdate({ effect: effect.id })}
-										className={`flex-shrink-0 flex flex-col items-center gap-1.5 p-2 sm:p-2.5 rounded-lg border-2 transition-all min-w-[70px] ${
+										className={`flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all min-w-[80px] hover:scale-105 ${
 											currentCustomization.effect === effect.id
-												? "border-primary/80 bg-blue-50 shadow-md"
-												: "border-gray-200 hover:border-gray-300"
+												? "border-primary bg-blue-50 shadow-lg scale-105"
+												: "border-gray-200 hover:border-gray-300 bg-white"
 										}`}
 									>
-										<div className="w-10 h-10 sm:w-11 sm:h-11 rounded overflow-hidden shadow-sm">
-											{effectPreviewUrl && (
+										<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden shadow-md border border-gray-200">
+											{effectPreviewUrl ? (
 												<img
 													src={effectPreviewUrl}
 													alt={effect.label}
@@ -227,9 +302,11 @@ const CustomizationToolbox: React.FC<CustomizationToolboxProps> = ({
 														filter: getEffectFilter(effect.id),
 													}}
 												/>
+											) : (
+												<div className="w-full h-full bg-gray-100" />
 											)}
 										</div>
-										<span className="text-[9px] sm:text-[10px] font-medium text-gray-700">
+										<span className="text-[10px] sm:text-xs font-semibold text-gray-700">
 											{effect.label}
 										</span>
 									</button>
@@ -241,4 +318,5 @@ const CustomizationToolbox: React.FC<CustomizationToolboxProps> = ({
 		</div>
 	);
 };
+
 export default CustomizationToolbox;
