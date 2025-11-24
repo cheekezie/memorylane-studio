@@ -183,6 +183,38 @@ const LivePreview: React.FC<LivePreviewProps> = ({
 		});
 	};
 
+	const handleImageReplace = (
+		oldImageId: string,
+		newUrl: string,
+		newFile: File,
+	) => {
+		setImageFiles((prev) => {
+			const index = prev.findIndex((img) => img.id === oldImageId);
+			if (index === -1) return prev;
+
+			const updated = [...prev];
+			updated[index] = {
+				id: oldImageId,
+				file: newFile,
+			};
+
+			const oldUrl = imageUrls[index];
+			if (oldUrl) {
+				URL.revokeObjectURL(oldUrl);
+			}
+
+			return updated;
+		});
+
+		// Force re-render
+		setImageUrls((prev) => {
+			const updated = [...prev];
+			updated[prev.findIndex((_, i) => imageFiles[i]?.id === oldImageId)] =
+				newUrl;
+			return updated;
+		});
+	};
+
 	return (
 		<div className="fixed inset-0 bg-gradient-to-br from-gray-50 to-gray-100 z-50 flex flex-col">
 			<PreviewHeader onClose={onClose} onSave={handleSave} />
@@ -200,6 +232,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({
 					scrollContainerRef={scrollContainerRef}
 					onAddMore={handleAddMore}
 					mode={mode}
+					onImageReplace={handleImageReplace}
 				/>
 			</div>
 
