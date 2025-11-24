@@ -18,6 +18,15 @@ interface CanvasPreviewProps {
 	mode?: "frame" | "gallery" | "art";
 }
 
+// Frame size aspect ratios
+const FRAME_DIMENSIONS: Record<string, { ratio: number }> = {
+	"20x20": { ratio: 1 },
+	"30x20": { ratio: 3 / 2 },
+	"40x30": { ratio: 4 / 3 },
+	"50x40": { ratio: 5 / 4 },
+	"60x40": { ratio: 3 / 2 },
+};
+
 const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 	imageUrl,
 	customization,
@@ -35,10 +44,23 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 	const wrapperRef = useRef<HTMLDivElement | null>(null);
 
 	const borderObj = BORDERS.find((b) => b.id === customization.border);
-	const borderPx = borderObj ? borderObj.width : 0;
-
 	const frameObj = FRAME_TYPES.find((f) => f.id === customization.frameType);
 	const frameColor = frameObj?.color || "#ffffff";
+	const hasFrame = customization.frameType !== "none";
+
+	// Get frame dimensions based on selected size
+	const frameDimensions =
+		FRAME_DIMENSIONS[customization.frameSize] || FRAME_DIMENSIONS["30x20"];
+
+	// Calculate actual display dimensions
+	const displayW = width;
+	const displayH = height ?? Math.round(displayW / frameDimensions.ratio);
+
+	// Frame thickness - realistic depth (12-18px based on size)
+	const frameThickness = hasFrame ? Math.round(displayW * 0.055) : 0;
+
+	// Mat border - only applied when border option is selected
+	const matBorderPx = borderObj?.width || 0;
 
 	const getEffectFilter = (effect: string) => {
 		switch (effect) {
@@ -72,41 +94,99 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 		});
 	};
 
-	const fitContain = (
-		srcW: number,
-		srcH: number,
-		dstW: number,
-		dstH: number,
-	) => {
+	const fitCover = (srcW: number, srcH: number, dstW: number, dstH: number) => {
 		const srcRatio = srcW / srcH;
 		const dstRatio = dstW / dstH;
+
 		if (srcRatio > dstRatio) {
-			return { width: dstW, height: Math.round(dstW / srcRatio) };
+			const scaledHeight = dstH;
+			const scaledWidth = scaledHeight * srcRatio;
+			return {
+				width: scaledWidth,
+				height: scaledHeight,
+				offsetX: -(scaledWidth - dstW) / 2,
+				offsetY: 0,
+			};
 		} else {
-			return { width: Math.round(dstH * srcRatio), height: dstH };
+			const scaledWidth = dstW;
+			const scaledHeight = scaledWidth / srcRatio;
+			return {
+				width: scaledWidth,
+				height: scaledHeight,
+				offsetX: 0,
+				offsetY: -(scaledHeight - dstH) / 2,
+			};
 		}
 	};
 
-	const roundRect = (
+	const draw3DFrame = (
 		ctx: CanvasRenderingContext2D,
 		x: number,
 		y: number,
 		w: number,
 		h: number,
-		radius = 8,
-		fill = false,
-		stroke = false,
+		thickness: number,
+		color: string,
 	) => {
-		const r = Math.min(radius, w / 2, h / 2);
+		// Outer frame rectangle
+		ctx.fillStyle = color;
+		ctx.fillRect(x, y, w, h);
+
+		// Create 3D beveled effect - lighter top/left edges
+		const topColor = adjustBrightness(color, 25);
+		const bottomColor = adjustBrightness(color, -35);
+		const sideColor = adjustBrightness(color, -15);
+
+		// Top bevel (highlight)
+		ctx.fillStyle = topColor;
 		ctx.beginPath();
-		ctx.moveTo(x + r, y);
-		ctx.arcTo(x + w, y, x + w, y + h, r);
-		ctx.arcTo(x + w, y + h, x, y + h, r);
-		ctx.arcTo(x, y + h, x, y, r);
-		ctx.arcTo(x, y, x + w, y, r);
+		ctx.moveTo(x, y);
+		ctx.lineTo(x + w, y);
+		ctx.lineTo(x + w - thickness * 0.6, y + thickness * 0.6);
+		ctx.lineTo(x + thickness * 0.6, y + thickness * 0.6);
 		ctx.closePath();
-		if (fill) ctx.fill();
-		if (stroke) ctx.stroke();
+		ctx.fill();
+
+		// Left bevel (highlight)
+		ctx.fillStyle = topColor;
+		ctx.beginPath();
+		ctx.moveTo(x, y);
+		ctx.lineTo(x + thickness * 0.6, y + thickness * 0.6);
+		ctx.lineTo(x + thickness * 0.6, y + h - thickness * 0.6);
+		ctx.lineTo(x, y + h);
+		ctx.closePath();
+		ctx.fill();
+
+		// Bottom bevel (shadow)
+		ctx.fillStyle = bottomColor;
+		ctx.beginPath();
+		ctx.moveTo(x, y + h);
+		ctx.lineTo(x + w, y + h);
+		ctx.lineTo(x + w - thickness * 0.6, y + h - thickness * 0.6);
+		ctx.lineTo(x + thickness * 0.6, y + h - thickness * 0.6);
+		ctx.closePath();
+		ctx.fill();
+
+		// Right bevel (shadow)
+		ctx.fillStyle = sideColor;
+		ctx.beginPath();
+		ctx.moveTo(x + w, y);
+		ctx.lineTo(x + w, y + h);
+		ctx.lineTo(x + w - thickness * 0.6, y + h - thickness * 0.6);
+		ctx.lineTo(x + w - thickness * 0.6, y + thickness * 0.6);
+		ctx.closePath();
+		ctx.fill();
+	};
+
+	const adjustBrightness = (color: string, percent: number): string => {
+		if (!color) return "#ffffff";
+
+		const num = parseInt(color.replace("#", ""), 16);
+		const r = Math.min(255, Math.max(0, (num >> 16) + percent));
+		const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + percent));
+		const b = Math.min(255, Math.max(0, (num & 0x0000ff) + percent));
+
+		return "#" + ((r << 16) | (g << 8) | b).toString(16).padStart(6, "0");
 	};
 
 	const draw = useCallback(async () => {
@@ -117,8 +197,6 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 		if (!ctx) return;
 
 		const dpr = window.devicePixelRatio || 1;
-		const displayW = width;
-		const displayH = height ?? Math.round((displayW * 3) / 4);
 
 		canvas.style.width = `${displayW}px`;
 		canvas.style.height = `${displayH}px`;
@@ -129,24 +207,40 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 		ctx.scale(dpr, dpr);
 		ctx.clearRect(0, 0, displayW, displayH);
 
-		// Frame background
-		ctx.fillStyle = frameColor;
-		roundRect(ctx, 0, 0, displayW, displayH, 12, true);
+		// Draw 3D frame if frame type is selected
+		if (hasFrame && frameThickness > 0) {
+			draw3DFrame(ctx, 0, 0, displayW, displayH, frameThickness, frameColor);
+		}
 
-		const innerX = borderPx;
-		const innerY = borderPx;
-		const innerW = Math.max(displayW - borderPx * 2, 1);
-		const innerH = Math.max(displayH - borderPx * 2, 1);
+		// Mat area (inner white border) - only if border is selected
+		const matX = frameThickness;
+		const matY = frameThickness;
+		const matW = Math.max(displayW - frameThickness * 2, 1);
+		const matH = Math.max(displayH - frameThickness * 2, 1);
 
-		ctx.fillStyle = "#ffffff";
-		roundRect(ctx, innerX, innerY, innerW, innerH, 8, true);
+		// Draw mat border if selected
+		if (matBorderPx > 0) {
+			ctx.fillStyle = "#ffffff";
+			ctx.fillRect(matX, matY, matW, matH);
+
+			// Subtle inner shadow on mat
+			ctx.strokeStyle = "rgba(0, 0, 0, 0.08)";
+			ctx.lineWidth = 1;
+			ctx.strokeRect(matX + 0.5, matY + 0.5, matW - 1, matH - 1);
+		}
+
+		// Image area
+		const imageX = matX + matBorderPx;
+		const imageY = matY + matBorderPx;
+		const imageW = Math.max(matW - matBorderPx * 2, 1);
+		const imageH = Math.max(matH - matBorderPx * 2, 1);
 
 		const img = await loadImage(imageUrl);
 		if (!img) {
 			ctx.fillStyle = "#f3f4f6";
-			roundRect(ctx, innerX, innerY, innerW, innerH, 8, true);
+			ctx.fillRect(imageX, imageY, imageW, imageH);
 			ctx.fillStyle = "#9ca3af";
-			ctx.font = "16px sans-serif";
+			ctx.font = "14px sans-serif";
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
 			ctx.fillText("Image not available", displayW / 2, displayH / 2);
@@ -154,12 +248,18 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 			return;
 		}
 
+		// Apply effect filter
 		const filter = getEffectFilter(customization.effect);
 		ctx.filter = filter === "none" ? "none" : filter;
 
-		const fit = fitContain(img.width, img.height, innerW, innerH);
-		const dx = innerX + (innerW - fit.width) / 2;
-		const dy = innerY + (innerH - fit.height) / 2;
+		// Use cover fit for tight image wrapping
+		const fit = fitCover(img.width, img.height, imageW, imageH);
+
+		// Clip to image area
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect(imageX, imageY, imageW, imageH);
+		ctx.clip();
 
 		ctx.drawImage(
 			img,
@@ -167,22 +267,42 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 			0,
 			img.width,
 			img.height,
-			dx,
-			dy,
+			imageX + fit.offsetX,
+			imageY + fit.offsetY,
 			fit.width,
 			fit.height,
 		);
+
+		ctx.restore();
 		ctx.filter = "none";
 
-		// Border line
-		if (borderPx > 0) {
-			ctx.strokeStyle = "#e6e6e6";
-			ctx.lineWidth = Math.max(1, borderPx / 2);
-			roundRect(ctx, innerX, innerY, innerW, innerH, 8, false, true);
+		// Inner shadow for depth (on the frame opening)
+		if (hasFrame) {
+			const gradient = ctx.createLinearGradient(
+				matX,
+				matY,
+				matX + 20,
+				matY + 20,
+			);
+			gradient.addColorStop(0, "rgba(0, 0, 0, 0.3)");
+			gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+			ctx.strokeStyle = gradient;
+			ctx.lineWidth = 3;
+			ctx.strokeRect(matX + 1, matY + 1, matW - 2, matH - 2);
 		}
 
 		ctx.restore();
-	}, [imageUrl, customization, width, height, borderPx, frameColor]);
+	}, [
+		imageUrl,
+		customization,
+		displayW,
+		displayH,
+		frameThickness,
+		matBorderPx,
+		frameColor,
+		hasFrame,
+	]);
 
 	useEffect(() => {
 		draw();
@@ -201,25 +321,29 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 			className={`relative group flex-shrink-0 transition-all duration-500 ease-out cursor-pointer ${
 				isSelected && editMode === "single" ? "scale-110 z-10" : "scale-100"
 			}`}
-			style={{ width: `${width}px` }}
+			style={{ width: `${displayW}px` }}
 		>
 			{isSelected && editMode === "single" && (
-				<div className="absolute -inset-2 rounded-2xl blur-lg bg-blue-400/20" />
+				<div className="absolute -inset-4 rounded-[1px] blur-xl bg-blue-400/30 animate-pulse" />
 			)}
 
 			{!isSelected && editMode === "single" && totalImages > 1 && (
-				<div className="absolute inset-0 bg-gray-900/30 backdrop-blur-[2px] rounded-xl z-[1] transition-all duration-500" />
+				<div className="absolute inset-0 bg-gray-900/40 backdrop-blur-[3px] z-[1] transition-all duration-500" />
 			)}
 
 			<div
-				className={`relative rounded-xl overflow-hidden transition-all duration-500 ${
+				className={`relative overflow-hidden transition-all duration-500 ${
 					isSelected && editMode === "single"
 						? "shadow-2xl"
 						: "hover:shadow-xl hover:scale-[1.02]"
 				}`}
 				style={{
-					width: `${width}px`,
-					height: height ? `${height}px` : "auto",
+					width: `${displayW}px`,
+					height: `${displayH}px`,
+					boxShadow:
+						isSelected && editMode === "single"
+							? "0 30px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)"
+							: "0 15px 35px -10px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05)",
 				}}
 			>
 				<canvas
